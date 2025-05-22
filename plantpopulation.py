@@ -2,10 +2,18 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+import os
 
 st.set_page_config(page_title="Plant Population Dashboard", layout="wide")
 st.title("🌱 Plant Population Tool")
 st.markdown("---")
+
+excel_file = "plant_population_data.xlsx"
+
+if os.path.exists(excel_file):
+    saved_data = pd.read_excel(excel_file)
+else:
+    saved_data = pd.DataFrame()
 
 st.subheader("Field Input Parameters")
 
@@ -39,9 +47,7 @@ with st.form("plant_population_form"):
     submitted = st.form_submit_button("Submit")
 
 if submitted:
-    st.markdown("---")
-    st.subheader("📊 Submitted Data")
-    result = pd.DataFrame([{
+    new_entry = pd.DataFrame([{
         "Farmer Name": farmer_name,
         "Field ID": field_id,
         "Area (acre)": area_acre,
@@ -62,4 +68,22 @@ if submitted:
         "Labour Efficiency (gaps/hr)": labour_efficiency
     }])
 
-    st.dataframe(result, use_container_width=True)
+    saved_data = pd.concat([saved_data, new_entry], ignore_index=True)
+    saved_data.to_excel(excel_file, index=False)
+    st.success("Data submitted and saved to Excel.")
+
+st.markdown("---")
+st.subheader("📊 Collected Submissions")
+st.dataframe(saved_data, use_container_width=True)
+
+if not saved_data.empty:
+    st.markdown("---")
+    st.subheader("📈 Summary Analysis")
+
+    avg_gap_percent = saved_data["Gap %"].mean()
+    avg_success_rate = saved_data["Success Rate (%)"].mean()
+    avg_efficiency = saved_data["Labour Efficiency (gaps/hr)"].mean()
+
+    st.metric("Average Gap %", f"{avg_gap_percent:.2f}%")
+    st.metric("Average Success Rate", f"{avg_success_rate:.2f}%")
+    st.metric("Average Labour Efficiency", f"{avg_efficiency:.2f} gaps/hr")
