@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 import os
+import plotly.express as px
 
 st.set_page_config(page_title="Plant Population Dashboard", layout="wide")
 st.title("🌱 Plant Population Tool")
@@ -74,16 +75,53 @@ if submitted:
 
 st.markdown("---")
 st.subheader("📊 Collected Submissions")
-st.dataframe(saved_data, use_container_width=True)
 
 if not saved_data.empty:
+    with st.expander("🔍 Filter Data"):
+        farmers = saved_data["Farmer Name"].unique().tolist()
+        selected_farmers = st.multiselect("Farmer Name", options=farmers, default=farmers)
+
+        fields = saved_data["Field ID"].unique().tolist()
+        selected_fields = st.multiselect("Field ID", options=fields, default=fields)
+
+        filtered_data = saved_data[
+            saved_data["Farmer Name"].isin(selected_farmers) &
+            saved_data["Field ID"].isin(selected_fields)
+        ]
+
+    st.dataframe(filtered_data, use_container_width=True)
+
     st.markdown("---")
     st.subheader("📈 Summary Analysis")
 
-    avg_gap_percent = saved_data["Gap %"].mean()
-    avg_success_rate = saved_data["Success Rate (%)"].mean()
-    avg_efficiency = saved_data["Labour Efficiency (gaps/hr)"].mean()
+    avg_gap_percent = filtered_data["Gap %"].mean()
+    avg_success_rate = filtered_data["Success Rate (%)"].mean()
+    avg_efficiency = filtered_data["Labour Efficiency (gaps/hr)"].mean()
+    total_expected = filtered_data["Expected Plants"].sum()
+    total_emerged = filtered_data["Plants Emerged"].sum()
+    total_missing = filtered_data["Missing Plants"].sum()
+    total_filled = filtered_data["Gaps filled"].sum()
 
     st.metric("Average Gap %", f"{avg_gap_percent:.2f}%")
     st.metric("Average Success Rate", f"{avg_success_rate:.2f}%")
     st.metric("Average Labour Efficiency", f"{avg_efficiency:.2f} gaps/hr")
+    st.metric("Total Expected Plants", total_expected)
+    st.metric("Total Emerged Plants", total_emerged)
+    st.metric("Total Missing Plants", total_missing)
+    st.metric("Total Gaps Filled", total_filled)
+
+    st.markdown("---")
+    st.subheader("📊 Charts")
+
+    chart_col1, chart_col2 = st.columns(2)
+
+    with chart_col1:
+        fig1 = px.bar(filtered_data, x="Farmer Name", y="Gap %", color="Field ID", title="Gap % by Farmer")
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with chart_col2:
+        fig2 = px.line(filtered_data.sort_values("Sowing Date"), x="Sowing Date", y="Success Rate (%)", color="Farmer Name", title="Success Rate Over Time")
+        st.plotly_chart(fig2, use_container_width=True)
+
+    fig3 = px.scatter(filtered_data, x="Expected Plants", y="Plants Emerged", color="Farmer Name", size="Labour Efficiency (gaps/hr)", title="Expected vs Emerged Plants")
+    st.plotly_chart(fig3, use_container_width=True)
