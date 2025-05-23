@@ -22,7 +22,7 @@ if calculate:
     # Constants
     germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}  # plants/acre
     confidence_interval = 0.90
-    seeds_per_packet = 7000
+    seeds_per_packet = 3500
     acre_to_m2 = 4046.86
 
     # Convert spacing to meters if needed
