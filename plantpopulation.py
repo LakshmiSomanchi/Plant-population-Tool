@@ -22,7 +22,7 @@ if calculate:
     # Constants
     germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}  # plants/acre
     confidence_interval = 0.90
-    seeds_per_packet = 8000
+    seeds_per_packet = 7500
     acre_to_m2 = 4046.86
 
     # Convert spacing to meters if needed
@@ -47,4 +47,4 @@ if calculate:
     st.metric("Required Seeds (with 90% confidence)", f"{int(required_seeds):,} seeds")
     st.metric("Seed Packets Needed", f"{required_packets} packets")
 
-    st.caption("⚙️ Based on 8000 seeds per 450g packet and 90% germination confidence. Packets are rounded down to the nearest full packet.")
+    st.caption("⚙️ Based on 7500 seeds per 450g packet and 90% germination confidence. Packets are rounded down to the nearest full packet.")
