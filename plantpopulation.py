@@ -10,14 +10,16 @@ is_dark = st.get_option("theme.base") == "dark"
 text_color = "#f8f9fa" if is_dark else "#0A0A0A"
 bg_color = "#0A9396" if is_dark else "#e0f2f1"
 
-# Custom theme styling
+# Apply full page background color
 st.markdown(f"""
 <style>
+    html, body, [class*="css"]  {{
+        background-color: {bg_color};
+        font-family: 'Helvetica', sans-serif;
+    }}
     .block-container {{
         padding-top: 3rem;
         padding-bottom: 3rem;
-        font-family: 'Helvetica', sans-serif;
-        background-color: {bg_color};
     }}
     .stMetricValue {{
         font-size: 1.5rem !important;
