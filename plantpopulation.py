@@ -4,34 +4,42 @@ from math import floor
 
 st.set_page_config(page_title="Plant Population Tool", layout="wide")
 
-# Page styling
-st.markdown("""
+# Detect dark mode for adaptive styling
+is_dark = st.get_option("theme.base") == "dark"
+
+text_color = "#f8f9fa" if is_dark else "#0A0A0A"
+bg_color = "#0A9396" if is_dark else "#e0f2f1"
+
+# Custom theme styling
+st.markdown(f"""
 <style>
-    .block-container {
+    .block-container {{
         padding-top: 3rem;
         padding-bottom: 3rem;
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .stMetricValue {
+        font-family: 'Helvetica', sans-serif;
+        background-color: {bg_color};
+    }}
+    .stMetricValue {{
         font-size: 1.5rem !important;
-        color: #0A9396;
-    }
-    .stMetricLabel {
+        color: {text_color};
+    }}
+    .stMetricLabel {{
         font-weight: bold;
-    }
-    h1, h2, h3, h4 {
-        color: #005f73;
-    }
-    .stButton>button {
+        color: {text_color};
+    }}
+    h1, h2, h3, h4, h5 {{
+        color: {text_color};
+    }}
+    .stButton>button {{
         background-color: #0A9396;
         color: white;
         font-weight: bold;
         border-radius: 5px;
         padding: 0.6em 1.5em;
-    }
-    .stButton>button:hover {
+    }}
+    .stButton>button:hover {{
         background-color: #007f86;
-    }
+    }}
 </style>
 """, unsafe_allow_html=True)
 
