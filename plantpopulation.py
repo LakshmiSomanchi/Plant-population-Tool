@@ -1,6 +1,6 @@
 # dashboard.py
 import streamlit as st
-from math import ceil
+from math import floor
 
 st.set_page_config(page_title="Plant Population & Seed Requirement", layout="centered")
 st.title("🌿 Plant Population & Seed Requirement Calculator")
@@ -22,7 +22,7 @@ if calculate:
     # Constants
     germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}  # plants/acre
     confidence_interval = 0.90
-    seeds_per_packet = 7000
+    seeds_per_packet = 8000
     acre_to_m2 = 4046.86
 
     # Convert spacing to meters if needed
@@ -39,7 +39,7 @@ if calculate:
     # Required seeds considering germination rate
     target_plants = germination_rate_per_acre[state] * land_acres
     required_seeds = target_plants / confidence_interval
-    required_packets = ceil(required_seeds / seeds_per_packet)
+    required_packets = floor(required_seeds / seeds_per_packet)
 
     st.subheader("📊 Output")
     st.metric("Calculated Plant Capacity (based on spacing)", f"{int(calculated_plants):,} plants")
@@ -47,4 +47,4 @@ if calculate:
     st.metric("Required Seeds (with 90% confidence)", f"{int(required_seeds):,} seeds")
     st.metric("Seed Packets Needed", f"{required_packets} packets")
 
-    st.caption("⚙️ Based on 7000 seeds per 450g packet and 90% germination confidence.")
+    st.caption("⚙️ Based on 8000 seeds per 450g packet and 90% germination confidence. Packets are rounded down to the nearest full packet.")
