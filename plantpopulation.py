@@ -44,7 +44,7 @@ if calculate:
     st.subheader("📊 Output")
     st.metric("Calculated Plant Capacity (based on spacing)", f"{int(calculated_plants):,} plants")
     st.metric("Target Plants (per germination rate)", f"{int(target_plants):,} plants")
-    st.metric("Required Seeds (with 85% confidence)", f"{int(required_seeds):,} seeds")
+    st.metric("Required Seeds (with 90% confidence)", f"{int(required_seeds):,} seeds")
     st.metric("Seed Packets Needed", f"{required_packets} packets")
 
     st.caption("⚙️ Based on 7000 seeds per 450g packet and 85% germination confidence.")
