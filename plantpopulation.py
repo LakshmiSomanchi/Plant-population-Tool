@@ -47,4 +47,4 @@ if calculate:
     st.metric("Required Seeds (with 90% confidence)", f"{int(required_seeds):,} seeds")
     st.metric("Seed Packets Needed", f"{required_packets} packets")
 
-    st.caption("⚙️ Based on 7000 seeds per 450g packet and 85% germination confidence.")
+    st.caption("⚙️ Based on 3500 seeds per 450g packet and 90% germination confidence.")
