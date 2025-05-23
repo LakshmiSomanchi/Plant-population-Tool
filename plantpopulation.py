@@ -2,21 +2,36 @@
 import streamlit as st
 from math import floor
 
-st.set_page_config(page_title="Plant Population & Seed Requirement", layout="centered")
-st.title("🌿 Plant Population & Seed Requirement Calculator")
+st.set_page_config(page_title="Plant Population Tool", layout="wide")
+st.title("🌿 Plant Population & Seed Requirement Tool")
 st.markdown("---")
 
-st.subheader("📥 Input Parameters")
+st.markdown("""
+<style>
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    .stMetric { text-align: center; }
+</style>
+""", unsafe_allow_html=True)
 
-state = st.selectbox("State", ["Maharashtra", "Gujarat"])
-spacing_unit = st.selectbox("Spacing Unit", ["cm", "m"])
-row_spacing = st.number_input("Row Spacing (between rows)", min_value=0.01, step=0.1)
-plant_spacing = st.number_input("Plant Spacing (between plants)", min_value=0.01, step=0.1)
-land_acres = st.number_input("Farm Area (acres)", min_value=0.01, step=0.1)
+with st.container():
+    st.header("📥 Farmer Survey Entry")
+    col0, col1, col2 = st.columns(3)
+    farmer_name = col0.text_input("Farmer Name")
+    farmer_id = col1.text_input("Farmer ID")
+    state = col2.selectbox("State", ["Maharashtra", "Gujarat"])
 
-calculate = st.button("🔍 Calculate")
+    spacing_unit = st.selectbox("Spacing Unit", ["cm", "m"])
+    col3, col4, col5 = st.columns(3)
+    row_spacing = col3.number_input("Row Spacing (between rows)", min_value=0.01, step=0.1)
+    plant_spacing = col4.number_input("Plant Spacing (between plants)", min_value=0.01, step=0.1)
+    land_acres = col5.number_input("Farm Area (acres)", min_value=0.01, step=0.1)
 
-if calculate:
+    calculate = st.button("🔍 Calculate")
+
+if calculate and farmer_name and farmer_id:
     st.markdown("---")
 
     # Constants
@@ -30,21 +45,23 @@ if calculate:
         row_spacing /= 100
         plant_spacing /= 100
 
-    # Calculate total plants by land area and spacing
     plant_area_m2 = row_spacing * plant_spacing
     plants_per_m2 = 1 / plant_area_m2
     field_area_m2 = land_acres * acre_to_m2
     calculated_plants = plants_per_m2 * field_area_m2
 
-    # Required seeds considering germination rate
     target_plants = germination_rate_per_acre[state] * land_acres
     required_seeds = target_plants / confidence_interval
     required_packets = floor(required_seeds / seeds_per_packet)
 
-    st.subheader("📊 Output")
-    st.metric("Calculated Plant Capacity (based on spacing)", f"{int(calculated_plants):,} plants")
-    st.metric("Target Plants (per germination rate)", f"{int(target_plants):,} plants")
-    st.metric("Required Seeds (with 90% confidence)", f"{int(required_seeds):,} seeds")
-    st.metric("Seed Packets Needed", f"{required_packets} packets")
+    st.subheader("📊 Output Summary")
+    col6, col7, col8, col9 = st.columns(4)
+    col6.metric("Calculated Capacity", f"{int(calculated_plants):,} plants")
+    col7.metric("Target Plants", f"{int(target_plants):,} plants")
+    col8.metric("Required Seeds (90% confidence)", f"{int(required_seeds):,} seeds")
+    col9.metric("Seed Packets Needed", f"{required_packets} packets")
 
     st.caption("⚙️ Based on 7500 seeds per 450g packet and 90% germination confidence. Packets are rounded down to the nearest full packet.")
+
+elif calculate:
+    st.error("⚠️ Please enter both Farmer Name and Farmer ID to proceed.")
