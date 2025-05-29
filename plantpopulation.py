@@ -70,8 +70,8 @@ if submitted and farmer_name and farmer_id:
     st.markdown("---")
 
     germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}
-    confidence_interval = 0.90
-    seeds_per_packet = 7500
+    confidence_interval = 0.70
+    seeds_per_packet = 5625
     acre_to_m2 = 4046.86
 
     if spacing_unit == "cm":
@@ -96,7 +96,7 @@ if submitted and farmer_name and farmer_id:
     col9.metric("📦 Seed Packets Needed", f"{required_packets} packets")
 
     st.markdown("""<hr style='margin-top: 25px;'>""", unsafe_allow_html=True)
-    st.caption("ℹ️ Based on 7500 seeds per 450g packet and 90% germination confidence. Packets are rounded down to the nearest full packet.")
+    st.caption("ℹ️ Based on 5625 seeds per 450g packet and 70% germination confidence. Packets are rounded down to the nearest full packet.")
 
 elif submitted:
     st.error("⚠️ Please enter both Farmer Name and Farmer ID to proceed.")
