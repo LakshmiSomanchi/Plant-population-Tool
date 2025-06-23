@@ -63,7 +63,7 @@ with st.container():
         plant_spacing = col4.number_input("↕️ Plant Spacing (between plants)", min_value=0.01, step=0.1)
         land_acres = col5.number_input("🌾 Farm Area (acres)", min_value=0.01, step=0.1)
 
-        mortality = st.slider("Missing plants", min_value=0.0, max_value=100.0, value=5.0)
+        mortality = st.slider("Missing plants", min_value=0.0, max_value=5000.0, value=5.0)
 
         submitted = st.form_submit_button("🔍 Calculate")
 
