@@ -12,7 +12,7 @@ bg_color = "#0A9396" if is_dark else "#e0f2f1"
 # Styles
 st.markdown(f"""
 <style>
-    html, body, [class*="css"]  {{
+    html, body, [class*="css"] {{
         background-color: {bg_color};
         font-family: 'Helvetica', sans-serif;
     }}
@@ -64,6 +64,12 @@ with st.container():
         land_acres = col5.number_input("🌾 Farm Area (acres)", min_value=0.01, step=0.1)
 
         mortality = st.slider("Missing plants", min_value=0.0, max_value=5000.0)
+        
+        # New: Seed type selection
+        seed_type = st.radio(
+            "🌱 Select Seed Type",
+            ('Organic, Non-GMO, Hybrid', 'OPV (Breeder Seed)')
+        )
 
         submitted = st.form_submit_button("🔍 Calculate")
 
@@ -73,8 +79,19 @@ if submitted and farmer_name and farmer_id:
     # Constants
     germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}
     confidence_interval = 0.89
-    seeds_per_packet = 5600
     acre_to_m2 = 4046.86
+
+    # New: Define seeds per packet based on type
+    SEEDS_PER_PACKET_ORGANIC_HYBRID = 4000  # 1 packet seeds of 450 gm contains ~4000 seeds
+    SEEDS_PER_PACKET_OPV = 22300          # 1 packet (2.5 kg) for OPV contains ~22300 seeds
+
+    # Determine seeds_per_packet based on selection
+    if seed_type == 'Organic, Non-GMO, Hybrid':
+        seeds_per_packet = SEEDS_PER_PACKET_ORGANIC_HYBRID
+        packet_info = "1 packet of 450gm (organic, non GMO, Hybrid seeds)"
+    else: # OPV (Breeder Seed)
+        seeds_per_packet = SEEDS_PER_PACKET_OPV
+        packet_info = "1 packet of 2.5kg (OPV breeder seeds)"
 
     # Convert spacing
     if spacing_unit == "cm":
@@ -112,7 +129,7 @@ if submitted and farmer_name and farmer_id:
     col11.metric("💼 Seeds for Gaps", f"{int(gap_seeds):,} seeds")
     col12.metric("📦 Packets for Gap Filling", f"{gap_packets} packets")
 
-    st.caption("ℹ️ Based on 5600 seeds per 450g packet and accounting for mortality + germination confidence.")
+    st.caption(f"ℹ️ Based on {packet_info} and accounting for mortality + germination confidence.")
 
 elif submitted:
     st.error("⚠️ Please enter both Farmer Name and Farmer ID to proceed.")
