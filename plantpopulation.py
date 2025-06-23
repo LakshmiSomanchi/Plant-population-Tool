@@ -59,13 +59,13 @@ with st.container():
 
         spacing_unit = st.selectbox("📏 Spacing Unit", ["cm", "m"])
         col3, col4, col5 = st.columns(3)
-        # Added input validation to prevent division by zero or infinites
         row_spacing = col3.number_input("↔️ Row Spacing (between rows)", min_value=0.01, step=0.1, format="%.2f")
         plant_spacing = col4.number_input("↕️ Plant Spacing (between plants)", min_value=0.01, step=0.1, format="%.2f")
         land_acres = col5.number_input("🌾 Farm Area (acres)", min_value=0.01, step=0.1, format="%.2f")
 
-        mortality = st.slider("Missing plants (%)", min_value=0.0, max_value=100.0, value=5.0, step=1.0) # Changed max to 100% and added default value
-        
+        # FIX: Reverted mortality slider range and label
+        mortality = st.slider("Missing plants (number)", min_value=0, max_value=5000, value=0, step=10) # Changed max to 5000 and type to int
+
         seed_type = st.radio(
             "🌱 Select Seed Type",
             ('Organic, Non-GMO, Hybrid', 'OPV (Breeder Seed)')
@@ -82,11 +82,11 @@ if submitted and farmer_name and farmer_id:
 
         # Constants
         germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}
-        confidence_interval = 0.89
+        confidence_interval = 0.89 # This can be thought of as germination success rate
         acre_to_m2 = 4046.86
 
-        SEEDS_PER_PACKET_ORGANIC_HYBRID = 4000  # 1 packet seeds of 450 gm contains ~4000 seeds
-        SEEDS_PER_PACKET_OPV = 22300          # 1 packet (2.5 kg) for OPV contains ~22300 seeds
+        SEEDS_PER_PACKET_ORGANIC_HYBRID = 4000
+        SEEDS_PER_PACKET_OPV = 22300
 
         if seed_type == 'Organic, Non-GMO, Hybrid':
             seeds_per_packet = SEEDS_PER_PACKET_ORGANIC_HYBRID
@@ -108,7 +108,6 @@ if submitted and farmer_name and farmer_id:
 
         target_plants = germination_rate_per_acre[state] * land_acres
         
-        # Ensure confidence_interval is not zero to prevent division by zero
         if confidence_interval == 0:
             st.error("⚠️ Confidence interval cannot be zero for calculations.")
             st.stop()
@@ -116,32 +115,33 @@ if submitted and farmer_name and farmer_id:
         required_seeds = target_plants / confidence_interval
         required_packets = floor(required_seeds / seeds_per_packet)
 
-        # Ensure mortality calculation is safe
-        if mortality > 100:
-            effective_germination = 0 # If mortality is over 100%, effectively 0 plants survive
-        else:
-            effective_germination = confidence_interval * (1 - mortality / 100)
+        # FIX START: Adjusted how mortality (missing plants) affects expected_plants
+        # Expected plants from initial sowing, considering germination success (confidence_interval)
+        expected_plants_before_mortality = total_plants * confidence_interval
+        
+        # Now, subtract the explicit 'missing plants' from this expected number
+        # Ensure expected plants don't go below zero
+        expected_plants = max(0, expected_plants_before_mortality - mortality)
 
-        # Handle case where effective_germination might be zero or near-zero
-        if effective_germination <= 0:
-            st.warning("⚠️ Effective germination rate is zero or negative. Gap filling seeds cannot be calculated accurately.")
-            expected_plants = 0
-            gaps = target_plants # Assume all target plants are gaps if germination is zero
+        # If effective germination rate for gap filling is needed, it's just the confidence_interval
+        # because the 'mortality' is already accounted for as a fixed number of missing plants.
+        effective_germination_for_gap_fill = confidence_interval 
+        
+        # Corrected gaps calculation: Shortfall to reach target, considering what survived (expected_plants)
+        gaps = max(0, target_plants - expected_plants)
+        # Ensure gaps don't exceed the total possible plants in the field.
+        gaps = min(gaps, total_plants) 
+
+        # Handle case where effective_germination_for_gap_fill might be zero or near-zero
+        if effective_germination_for_gap_fill <= 0:
+            st.warning("⚠️ Effective germination rate for gap filling is zero or negative. Gap filling seeds cannot be calculated accurately.")
             gap_seeds = float('inf') # Needs infinite seeds
             gap_packets = float('inf') # Needs infinite packets
         else:
-            expected_plants = total_plants * effective_germination
-            
-            # Corrected gaps calculation
-            # Gaps are the plants needed to reach target, accounting for expected survival
-            gaps = max(0, target_plants - expected_plants)
-            # Ensure gaps do not exceed the total possible plants in the field.
-            gaps = min(gaps, total_plants) 
-
-            gap_seeds = ceil(gaps / effective_germination)
+            gap_seeds = ceil(gaps / effective_germination_for_gap_fill)
             gap_packets = ceil(gap_seeds / seeds_per_packet)
-        
-        # Handle infinite values for display gracefully
+        # FIX END
+
         display_gap_seeds = f"{int(gap_seeds):,} seeds" if isfinite(gap_seeds) else "N/A (Infinite)"
         display_gap_packets = f"{gap_packets} packets" if isfinite(gap_packets) else "N/A (Infinite)"
 
@@ -161,7 +161,7 @@ if submitted and farmer_name and farmer_id:
         col11.metric("💼 Seeds for Gaps", display_gap_seeds)
         col12.metric("📦 Packets for Gap Filling", display_gap_packets)
 
-        st.caption(f"ℹ️ Based on {packet_info} and accounting for mortality + germination confidence.")
+        st.caption(f"ℹ️ Based on {packet_info} and accounting for germination confidence and actual missing plants.")
 
 elif submitted:
     st.error("⚠️ Please enter both Farmer Name and Farmer ID to proceed.")
