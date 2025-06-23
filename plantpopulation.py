@@ -65,7 +65,7 @@ with st.container():
 
         mortality = st.slider("Missing plants", min_value=0.0, max_value=5000.0)
         
-        # New: Seed type selection
+        # FIX: Added Seed type selection
         seed_type = st.radio(
             "🌱 Select Seed Type",
             ('Organic, Non-GMO, Hybrid', 'OPV (Breeder Seed)')
@@ -81,17 +81,18 @@ if submitted and farmer_name and farmer_id:
     confidence_interval = 0.89
     acre_to_m2 = 4046.86
 
-    # New: Define seeds per packet based on type
+    # FIX: Define seeds per packet based on type
     SEEDS_PER_PACKET_ORGANIC_HYBRID = 4000  # 1 packet seeds of 450 gm contains ~4000 seeds
     SEEDS_PER_PACKET_OPV = 22300          # 1 packet (2.5 kg) for OPV contains ~22300 seeds
 
-    # Determine seeds_per_packet based on selection
+    # FIX: Determine seeds_per_packet based on selection
     if seed_type == 'Organic, Non-GMO, Hybrid':
         seeds_per_packet = SEEDS_PER_PACKET_ORGANIC_HYBRID
-        packet_info = "1 packet of 450gm (organic, non GMO, Hybrid seeds)"
+        packet_info = "1 packet of 450gm (organic, non GMO, Hybrid seeds) containing ~4000 seeds"
     else: # OPV (Breeder Seed)
         seeds_per_packet = SEEDS_PER_PACKET_OPV
-        packet_info = "1 packet of 2.5kg (OPV breeder seeds)"
+        packet_info = "1 packet of 2.5kg (OPV breeder seeds) containing ~22300 seeds"
+
 
     # Convert spacing
     if spacing_unit == "cm":
@@ -129,6 +130,7 @@ if submitted and farmer_name and farmer_id:
     col11.metric("💼 Seeds for Gaps", f"{int(gap_seeds):,} seeds")
     col12.metric("📦 Packets for Gap Filling", f"{gap_packets} packets")
 
+    # FIX: Updated caption to reflect dynamic seed packet info
     st.caption(f"ℹ️ Based on {packet_info} and accounting for mortality + germination confidence.")
 
 elif submitted:
