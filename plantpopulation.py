@@ -48,7 +48,7 @@ st.title("🌿 Plant Population & Seed Requirement Tool")
 st.markdown("""<hr style='margin-top: -15px; margin-bottom: 25px;'>""", unsafe_allow_html=True)
 
 with st.container():
-    st.header("📅 Farmer Survey Entry")
+    st.header("📅 Farmer Data Entry")
     st.markdown("Fill in the details below to calculate how many seed packets are required for optimal plant population.")
 
     with st.form("survey_form"):
@@ -63,7 +63,7 @@ with st.container():
         plant_spacing = col4.number_input("↕️ Plant Spacing (between plants)", min_value=0.01, step=0.1)
         land_acres = col5.number_input("🌾 Farm Area (acres)", min_value=0.01, step=0.1)
 
-        mortality = st.slider("😓 Mortality %", min_value=0.0, max_value=100.0, value=5.0)
+        mortality = st.slider("Missing plants", min_value=0.0, max_value=100.0, value=5.0)
 
         submitted = st.form_submit_button("🔍 Calculate")
 
@@ -72,8 +72,8 @@ if submitted and farmer_name and farmer_id:
 
     # Constants
     germination_rate_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}
-    confidence_interval = 0.70
-    seeds_per_packet = 5625
+    confidence_interval = 0.89
+    seeds_per_packet = 5600
     acre_to_m2 = 4046.86
 
     # Convert spacing
@@ -112,7 +112,7 @@ if submitted and farmer_name and farmer_id:
     col11.metric("💼 Seeds for Gaps", f"{int(gap_seeds):,} seeds")
     col12.metric("📦 Packets for Gap Filling", f"{gap_packets} packets")
 
-    st.caption("ℹ️ Based on 5625 seeds per 450g packet and accounting for mortality + germination confidence.")
+    st.caption("ℹ️ Based on 5600 seeds per 450g packet and accounting for mortality + germination confidence.")
 
 elif submitted:
     st.error("⚠️ Please enter both Farmer Name and Farmer ID to proceed.")
