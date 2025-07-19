@@ -1,5 +1,7 @@
-# dashboard.py
+# plantpopulation.py
 import streamlit as st
+import pandas as pd  # Added for DataFrame and CSV
+import io            # Added for CSV buffer
 from math import floor, ceil, isfinite
 
 st.set_page_config(page_title="Plant Population Tool", layout="wide")
@@ -79,28 +81,8 @@ if submitted and farmer_name and farmer_id:
         st.markdown("---")
 
         # Constants
-        # Note: Using your specified germination rate of 75% (0.75) from the detailed notes
         germination_rate = 0.75 
-        
-        # Using the specific values from your provided calculations for germination rate per acre
-        # Maharashtra: 90x40cm gives ~11,241 spots, then 11,241 / 0.75 = 14,988 seeds. So target is 11,241 plants/acre.
-        # Gujarat: 90x60cm gives ~7,494 spots, then 7,494 / 0.75 = 9,992 seeds. So target is 7,494 plants/acre.
-        # It seems the 'target plants' in your current output (7,400) is for Gujarat (90x60)
-        # and 'Calculated Capacity' (14,988) is for Maharashtra (90x40).
-        # To align with your document, let's use the actual calculated 'total_plants' as the base for target
-        # rather than fixed germination_rate_per_acre.
-        # However, if 'Target Plants' should be a fixed value for the state regardless of spacing,
-        # we'd need to explicitly set it. From the screenshot, 'Target Plants' is 7,400.
-        # Let's assume the 'Target Plants' metric should reflect the target *population* per acre for the state,
-        # irrespective of the specific spacing chosen by the user in the input.
-        # If the 'Target Plants' needs to be dynamically derived from the chosen spacing and area, we will adjust.
-        # For now, let's stick to the constant values from your previous code which matches the screenshot.
-        fixed_target_plants_per_acre = {"Maharashtra": 14000, "Gujarat": 7400} # This seems to be the target *seeds* or *desired population* from prior versions, let's clarify its role.
-                                                                                # Based on the screenshot: Target Plants 7,400 matches Gujarat's 90x60 calculation from your document.
-                                                                                # Calculated Capacity 14,988 matches Maharashtra's 90x40 calculation from your document.
-                                                                                # There might be a slight mismatch in naming or interpretation.
-                                                                                # For this fix, let's use the document's logic for *calculated capacity* as the "plant population" base.
-        
+        fixed_target_plants_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}
         acre_to_m2 = 4046.86
 
         SEEDS_PER_PACKET_ORGANIC_HYBRID = 4000
@@ -122,42 +104,26 @@ if submitted and farmer_name and farmer_id:
         plant_area_m2 = row_spacing * plant_spacing
         plants_per_m2 = 1 / plant_area_m2
         field_area_m2 = land_acres * acre_to_m2
-        total_plants = plants_per_m2 * field_area_m2 # This is "Plant Population" from your notes
+        total_plants = plants_per_m2 * field_area_m2
 
-        # Target plants will be the expected population for the chosen state's typical spacing,
-        # or the 'calculated capacity' from the input spacing.
-        # Based on your image, 'Target Plants' is 7,400 while 'Calculated Capacity' is 14,988.
-        # This implies 'Target Plants' is a fixed goal *per acre* for the state, regardless of specific user spacing.
-        # Let's retain the fixed_target_plants_per_acre constant for this.
         target_plants = fixed_target_plants_per_acre[state] * land_acres
         
         if germination_rate <= 0:
             st.error("⚠️ Germination rate cannot be zero or negative for calculations.")
             st.stop()
 
-        # Seeds required for initial sowing (to achieve target_plants given germination_rate)
         required_seeds = target_plants / germination_rate
         required_packets = floor(required_seeds / seeds_per_packet)
 
-        # --- Gap Filling Calculations based on your provided formulas ---
-        # Expected plants after initial germination (based on total capacity and germination_rate)
+        # --- Gap Filling Calculations ---
         expected_plants_after_germination = total_plants * germination_rate
-
-        # Initial gaps based on expected loss from total capacity due to germination
         initial_gaps = total_plants - expected_plants_after_germination
-        
-        # Total gaps to fill includes initial gaps AND the explicitly reported 'mortality' (missing plants)
-        # Ensure 'mortality' does not exceed the remaining capacity that can be filled
         total_gaps_to_fill = max(0, initial_gaps + mortality)
-        
-        # Cap total gaps to the 'total_plants' capacity if it somehow exceeds it
         total_gaps_to_fill = min(total_gaps_to_fill, total_plants) 
 
-        # Seeds needed for gap filling (re-sow based on germination rate)
-        # Make sure germination_rate is not zero here
         if germination_rate <= 0:
-            gap_seeds = float('inf') # Needs infinite seeds
-            gap_packets = float('inf') # Needs infinite packets
+            gap_seeds = float('inf')
+            gap_packets = float('inf')
         else:
             gap_seeds = ceil(total_gaps_to_fill / germination_rate)
             gap_packets = ceil(gap_seeds / seeds_per_packet)
@@ -182,6 +148,36 @@ if submitted and farmer_name and farmer_id:
         col12.metric("📦 Packets for Gap Filling", display_gap_packets)
 
         st.caption(f"ℹ️ Based on {packet_info} and accounting for {int(germination_rate*100)}% germination and actual missing plants.")
+
+        # --- CSV Download Section ---
+        result_data = {
+            "Farmer Name": [farmer_name],
+            "Farmer ID": [farmer_id],
+            "State": [state],
+            "Spacing Unit": [spacing_unit],
+            "Row Spacing": [row_spacing * (100 if spacing_unit == "m" else 1)],
+            "Plant Spacing": [plant_spacing * (100 if spacing_unit == "m" else 1)],
+            "Land Acres": [land_acres],
+            "Seed Type": [seed_type],
+            "Calculated Capacity": [int(total_plants)],
+            "Target Plants": [int(target_plants)],
+            "Required Seeds": [int(required_seeds)],
+            "Seed Packets Needed": [int(required_packets)],
+            "Gaps (Missing Plants)": [int(total_gaps_to_fill)],
+            "Seeds for Gaps": [gap_seeds if isfinite(gap_seeds) else None],
+            "Packets for Gap Filling": [gap_packets if isfinite(gap_packets) else None],
+        }
+        df = pd.DataFrame(result_data)
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+        csv_bytes = csv_buffer.getvalue().encode("utf-8")
+
+        st.download_button(
+            label="⬇️ Download Results as CSV",
+            data=csv_bytes,
+            file_name=f"{farmer_name}_plant_population_results.csv",
+            mime="text/csv"
+        )
 
 elif submitted:
     st.error("⚠️ Please enter both Farmer Name and Farmer ID to proceed.")
