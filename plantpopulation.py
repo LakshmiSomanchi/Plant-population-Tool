@@ -1,60 +1,16 @@
-# plantpopulation_enhanced.py
+# plantpopulation_final.py
 
 import streamlit as st
 import pandas as pd
 import io
 from math import floor, ceil, isfinite
+from streamlit_js_eval import get_geolocation  # <-- IMPORT THE LIBRARY
 
 st.set_page_config(page_title="Plant Population Tool", layout="wide")
 
-# Use session state to store coordinates so they persist across reruns
-if 'latitude' not in st.session_state:
-    st.session_state.latitude = ""
-if 'longitude' not in st.session_state:
-    st.session_state.longitude = ""
-
-# This function embeds a JavaScript snippet to fetch the GPS location
-def get_location():
-    st.html(
-        """
-        <script>
-            const get_location = () => {
-                // Check if the browser supports the Geolocation API
-                if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const { latitude, longitude } = position.coords;
-                            // Create a new URL with the coordinates as query parameters
-                            const url = new URL(window.location.href);
-                            url.searchParams.set('lat', latitude);
-                            url.searchParams.set('lon', longitude);
-                            // Reload the page with the new URL to pass data to Streamlit
-                            window.location.href = url.href;
-                        },
-                        (error) => {
-                            console.error("Error getting location: ", error);
-                            alert("Could not get your location. Please ensure you have given permission.");
-                        }
-                    );
-                } else {
-                    alert("Geolocation is not supported by this browser.");
-                }
-            }
-            // Automatically trigger the function when this HTML component is rendered
-            get_location();
-        </script>
-        """,
-        height=0,  # Make the HTML component invisible
-    )
-
-# On every script rerun, check if coordinates are in the URL
-params = st.query_params
-if "lat" in params and "lon" in params:
-    # If so, save them to the session state
-    st.session_state.latitude = params["lat"]
-    st.session_state.longitude = params["lon"]
-    # Clear the query parameters from the URL for a cleaner user experience
-    st.query_params.clear()
+# Use session state to store the location dictionary
+if 'location' not in st.session_state:
+    st.session_state.location = None
 
 # --- STYLING (from original code) ---
 is_dark = st.get_option("theme.base") == "dark"
@@ -88,24 +44,22 @@ with st.container():
     st.header("📅 Farmer Data Entry")
     st.markdown("Click the button to record the current location for this data entry.")
 
-    # This button triggers the get_location() function
-    if st.button("📍 Get Current Location", key="get_location_btn"):
-        get_location()
+    # This button now uses the library to get the location
+    if st.button("📍 Get Current Location"):
+        # The get_geolocation() function returns a dictionary with coordinates
+        location = get_geolocation()
+        if location:
+            st.session_state.location = location
 
+    # Display a message if location is available
+    if st.session_state.location:
+        st.success(f"📍 Location captured: Latitude {st.session_state.location['coords']['latitude']}, Longitude {st.session_state.location['coords']['longitude']}")
+    
     with st.form("survey_form"):
         col0, col1, col2 = st.columns(3)
         farmer_name = col0.text_input("👤 Farmer Name")
         farmer_id = col1.text_input("🆔 Farmer ID")
         state = col2.selectbox("🗽 State", ["Maharashtra", "Gujarat"])
-
-        st.markdown("---")
-        st.subheader("📍 Geolocation")
-        
-        loc_col1, loc_col2 = st.columns(2)
-        # Display the coordinates from session state; disabled to prevent manual changes
-        latitude = loc_col1.text_input("Latitude", value=st.session_state.latitude, disabled=True)
-        longitude = loc_col2.text_input("Longitude", value=st.session_state.longitude, disabled=True)
-        st.markdown("---")
 
         st.subheader("🌱 Farm and Seed Details")
         spacing_unit = st.selectbox("📏 Spacing Unit", ["cm", "m"])
@@ -125,8 +79,8 @@ if submitted and farmer_name and farmer_id:
     if row_spacing <= 0 or plant_spacing <= 0 or land_acres <= 0:
         st.error("⚠️ Row spacing, plant spacing, and farm area must be greater than zero.")
     else:
+        # --- All calculations remain the same ---
         st.markdown("---")
-        # --- CONSTANTS and CALCULATIONS (from original code) ---
         germination_rate = 0.75 
         fixed_target_plants_per_acre = {"Maharashtra": 14000, "Gujarat": 7400}
         acre_to_m2 = 4046.86
@@ -163,7 +117,6 @@ if submitted and farmer_name and farmer_id:
         display_gap_seeds = f"{int(gap_seeds):,} seeds" if isfinite(gap_seeds) else "N/A"
         display_gap_packets = f"{int(gap_packets)} packets" if isfinite(gap_packets) else "N/A"
         
-        # --- OUTPUT (from original code) ---
         st.subheader("📊 Output Summary")
         col6, col7, col8, col9 = st.columns(4)
         col6.metric("🧬 Calculated Capacity", f"{int(total_plants):,} plants")
@@ -178,13 +131,16 @@ if submitted and farmer_name and farmer_id:
         col12.metric("📦 Packets for Gap Filling", display_gap_packets)
         st.caption(f"ℹ️ Based on {packet_info} and accounting for {int(germination_rate*100)}% germination and actual missing plants.")
 
-        # --- CSV Download Section (Updated) ---
+        # --- CSV Download Section (Updated to include location) ---
+        latitude = st.session_state.location['coords']['latitude'] if st.session_state.location else None
+        longitude = st.session_state.location['coords']['longitude'] if st.session_state.location else None
+
         result_data = {
             "Farmer Name": [farmer_name],
             "Farmer ID": [farmer_id],
             "State": [state],
-            "Latitude": [st.session_state.latitude],
-            "Longitude": [st.session_state.longitude],
+            "Latitude": [latitude],
+            "Longitude": [longitude],
             "Spacing Unit": [spacing_unit],
             "Row Spacing": [row_spacing * (100 if spacing_unit == "m" else 1)],
             "Plant Spacing": [plant_spacing * (100 if spacing_unit == "m" else 1)],
